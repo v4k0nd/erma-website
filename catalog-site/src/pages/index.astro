@@ -1,0 +1,13 @@
+---
+// Redirect bare domain to the default (Romanian) language route.
+// In dev this uses a meta refresh; on Cloudflare Pages the _redirects file
+// handles it with a proper 301 before the HTML is even fetched.
+---
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content="0;url=/ro/" />
+    <link rel="canonical" href="/ro/" />
+  </head>
+  <body></body>
+</html>

@@ -1,0 +1,28 @@
+---
+import Base from "../../layouts/Base.astro";
+import { fetchActiveCatalogs, groupByType, TYPE_LABELS } from "../../lib/catalogs";
+
+const catalogs = await fetchActiveCatalogs();
+const groups = groupByType(catalogs);
+---
+<Base title="Cataloage ERMA" lang="ro">
+  <main>
+    {groups.map(([type, items]) => (
+      <section class="type-section">
+        <h2>{TYPE_LABELS[type]?.ro ?? type}</h2>
+        <ul class="grid">
+          {items.map((c) => (
+            <li class="card">
+              <a href={c.url} target="_blank" rel="noopener noreferrer">
+                <div class="image-container">
+                  <img src={c.image} alt={c.name} loading="lazy" />
+                </div>
+                <p class="card-title">{c.name}</p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </main>
+</Base>
