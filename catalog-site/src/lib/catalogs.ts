@@ -1,3 +1,5 @@
+import Papa from "papaparse";
+
 const CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRcSnKN65amdCXAHfu6lM9uph3BAEKIGJu6sFcCG0z4Nr-7NkvVL0wHSZLX0KYWTFamdGtVHHThIdAj/pub?gid=0&single=true&output=csv";
 
@@ -7,6 +9,8 @@ export interface Catalog {
   url: string;
   image: string;
   type: string;
+  supplier: string;
+  createdAt: string;
 }
 
 export const TYPE_ORDER = [
@@ -27,45 +31,32 @@ export const TYPE_LABELS: Record<string, { ro: string; hu: string }> = {
   poinsettia: { ro: "Poinsettia pentru sărbători",                         hu: "Poinsettia az ünnepekre" },
 };
 
-function parseCSVLine(line: string): string[] {
-  const fields: string[] = [];
-  let current = "";
-  let inQuote = false;
-  for (const ch of line) {
-    if (ch === '"') {
-      inQuote = !inQuote;
-    } else if (ch === "," && !inQuote) {
-      fields.push(current.trim());
-      current = "";
-    } else {
-      current += ch;
-    }
-  }
-  fields.push(current.trim());
-  return fields;
-}
-
 export async function fetchActiveCatalogs(): Promise<Catalog[]> {
   const res = await fetch(CSV_URL);
   if (!res.ok) throw new Error(`CSV fetch failed: ${res.status}`);
   const text = await res.text();
-  const lines = text.trim().split("\n");
 
-  return lines
-    .slice(1) // skip header
-    .map((line) => {
-      const cols = parseCSVLine(line);
-      return {
-        id:     cols[0] ?? "",
-        name:   cols[1] ?? "",
-        url:    cols[2] ?? "",
-        image:  cols[3] ?? "",
-        type:   cols[4] ?? "",
-        active: cols[5] ?? "",
-      };
-    })
-    .filter((row) => row.active === "1" && row.name && row.url)
-    .map(({ active: _active, ...rest }) => rest);
+  const parsed = Papa.parse<Record<string, string>>(text, {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: (h) => h.trim().toLowerCase(),
+  });
+
+  if (parsed.errors.length) {
+    console.warn("CSV parse errors:", parsed.errors);
+  }
+
+  return parsed.data
+    .filter((row) => row.active?.trim() === "1" && row.name?.trim() && row.url?.trim())
+    .map((row) => ({
+      id:        row.id?.trim()         ?? "",
+      name:      row.name.trim(),
+      url:       row.url.trim(),
+      image:     row.image?.trim()      ?? "",
+      type:      row.type?.trim()       ?? "",
+      supplier:  row.supplier?.trim()   ?? "",
+      createdAt: row.created_at?.trim() ?? "",
+    }));
 }
 
 export function groupByType(catalogs: Catalog[]): [string, Catalog[]][] {
@@ -75,7 +66,6 @@ export function groupByType(catalogs: Catalog[]): [string, Catalog[]][] {
     group.push(c);
     map.set(c.type, group);
   }
-  // Return sections in TYPE_ORDER; any unknown type falls to the end
   const known = TYPE_ORDER.filter((t) => map.has(t)).map((t) => [t, map.get(t)!] as [string, Catalog[]]);
   const unknown = [...map.entries()].filter(([t]) => !(TYPE_ORDER as readonly string[]).includes(t));
   return [...known, ...unknown];

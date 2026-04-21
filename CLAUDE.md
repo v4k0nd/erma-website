@@ -115,6 +115,13 @@ catalog-site/
 │           └── contact.astro
 ```
 
+## Data layer
+
+The Google Sheet CSV is parsed with PapaParse using header-based 
+field access, not positional indexing. Columns can be reordered 
+or new columns added in the Sheet without breaking the site. If a 
+future task touches the parser, keep it header-based.
+
 ## Non-goals
 
 - No CMS beyond Google Sheets for the catalog site.

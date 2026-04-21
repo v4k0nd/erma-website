@@ -3,26 +3,311 @@ import { fetchActiveCatalogs, groupByType, TYPE_LABELS } from "../lib/catalogs";
 
 interface Props {
   lang: "ro" | "hu";
+  showFilters?: boolean;
 }
 
-const { lang } = Astro.props;
+const { lang, showFilters = false } = Astro.props;
 const catalogs = await fetchActiveCatalogs();
 const groups = groupByType(catalogs);
+
+const allSuppliers = [...new Set(catalogs.map((c) => c.supplier).filter(Boolean))].sort();
+
+const t = {
+  ro: {
+    searchPlaceholder: "Caută catalog…",
+    supplierLabel: "Furnizor",
+    allSuppliers: "Toți furnizorii",
+    allCategories: "Toate",
+    noResults: "Niciun catalog nu corespunde filtrelor.",
+    clearFilters: "Șterge filtrele",
+  },
+  hu: {
+    searchPlaceholder: "Katalógus keresése…",
+    supplierLabel: "Szállító",
+    allSuppliers: "Összes szállító",
+    allCategories: "Összes",
+    noResults: "Nincs a szűrőknek megfelelő katalógus.",
+    clearFilters: "Szűrők törlése",
+  },
+}[lang];
 ---
-{groups.map(([type, items]) => (
-  <section class="type-section">
-    <h2>{TYPE_LABELS[type]?.[lang] ?? type}</h2>
-    <ul class="grid">
-      {items.map((c) => (
-        <li class="card">
-          <a href={c.url} target="_blank" rel="noopener noreferrer">
-            <div class="image-container">
-              <img src={c.image} alt={c.name} loading="lazy" />
-              <p class="card-title">{c.name}</p>
-            </div>
-          </a>
-        </li>
-      ))}
-    </ul>
-  </section>
-))}
+
+{showFilters && (
+  <div id="catalog-filters" hidden>
+    <div class="filter-bar">
+      <div class="filter-pills" id="cat-pills">
+        <button class="pill pill-active" data-cat="">
+          {t.allCategories}
+        </button>
+        {groups.map(([type]) => (
+          <button class="pill" data-cat={type}>
+            {TYPE_LABELS[type]?.[lang] ?? type}
+          </button>
+        ))}
+      </div>
+      <div class="filter-controls">
+        <select id="supplier-select" aria-label={t.supplierLabel}>
+          <option value="">{t.allSuppliers}</option>
+          {allSuppliers.map((s) => (
+            <option value={s}>{s}</option>
+          ))}
+        </select>
+        <input
+          id="catalog-search"
+          type="search"
+          placeholder={t.searchPlaceholder}
+          aria-label={t.searchPlaceholder}
+          autocomplete="off"
+        />
+      </div>
+    </div>
+    <p id="no-results" hidden>{t.noResults} <button id="clear-filters" class="clear-btn">{t.clearFilters}</button></p>
+  </div>
+)}
+
+<div id="catalog-grid-root">
+  {groups.map(([type, items]) => (
+    <section class="type-section" data-section-type={type}>
+      <h2>{TYPE_LABELS[type]?.[lang] ?? type}</h2>
+      <ul class="grid">
+        {items.map((c) => (
+          <li
+            class="card"
+            data-cat={c.type}
+            data-supplier={c.supplier}
+            data-title={c.name.toLowerCase()}
+          >
+            <a href={c.url} target="_blank" rel="noopener noreferrer">
+              <div class="image-container">
+                <img src={c.image} alt={c.name} loading="lazy" />
+                <p class="card-title">{c.name}</p>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</div>
+
+{showFilters && (
+  <script is:inline>
+  (function () {
+    var filtersEl = document.getElementById('catalog-filters');
+    if (!filtersEl) return;
+    filtersEl.removeAttribute('hidden');
+
+    var searchEl   = document.getElementById('catalog-search');
+    var selectEl   = document.getElementById('supplier-select');
+    var pillsEl    = document.getElementById('cat-pills');
+    var noResults  = document.getElementById('no-results');
+    var clearBtn   = document.getElementById('clear-filters');
+
+    var state = { cat: '', supplier: '', q: '' };
+
+    function readURL() {
+      var p = new URLSearchParams(location.search);
+      state.cat      = p.get('cat')      || '';
+      state.supplier = p.get('supplier') || '';
+      state.q        = p.get('q')        || '';
+    }
+
+    function applyToUI() {
+      searchEl.value = state.q;
+      selectEl.value = state.supplier;
+      pillsEl.querySelectorAll('.pill').forEach(function (btn) {
+        btn.classList.toggle('pill-active', btn.dataset.cat === state.cat);
+      });
+    }
+
+    function pushURL() {
+      var p = new URLSearchParams();
+      if (state.cat)      p.set('cat',      state.cat);
+      if (state.supplier) p.set('supplier', state.supplier);
+      if (state.q)        p.set('q',        state.q);
+      var qs = p.toString();
+      history.replaceState(null, '', qs ? '?' + qs : location.pathname);
+    }
+
+    function filter() {
+      var catLc      = state.cat.toLowerCase();
+      var supplierLc = state.supplier.toLowerCase();
+      var qLc        = state.q.toLowerCase().trim();
+
+      var anyVisible = false;
+
+      document.querySelectorAll('#catalog-grid-root .type-section').forEach(function (section) {
+        var sectionType = section.dataset.sectionType || '';
+        var sectionMatch = !catLc || sectionType === catLc;
+        var sectionHasVisible = false;
+
+        section.querySelectorAll('.card').forEach(function (card) {
+          var catMatch      = !catLc      || card.dataset.cat      === catLc;
+          var supplierMatch = !supplierLc || (card.dataset.supplier || '').toLowerCase() === supplierLc;
+          var qMatch        = !qLc        || (card.dataset.title    || '').includes(qLc);
+          var visible       = catMatch && supplierMatch && qMatch;
+          card.style.display = visible ? '' : 'none';
+          if (visible) sectionHasVisible = true;
+        });
+
+        section.style.display = sectionHasVisible ? '' : 'none';
+        if (sectionHasVisible) anyVisible = true;
+      });
+
+      noResults.hidden = anyVisible;
+    }
+
+    pillsEl.addEventListener('click', function (e) {
+      var btn = e.target.closest('.pill');
+      if (!btn) return;
+      state.cat = btn.dataset.cat || '';
+      applyToUI();
+      pushURL();
+      filter();
+    });
+
+    selectEl.addEventListener('change', function () {
+      state.supplier = selectEl.value;
+      pushURL();
+      filter();
+    });
+
+    searchEl.addEventListener('input', function () {
+      state.q = searchEl.value;
+      pushURL();
+      filter();
+    });
+
+    searchEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        state.q = '';
+        applyToUI();
+        pushURL();
+        filter();
+      }
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        state = { cat: '', supplier: '', q: '' };
+        applyToUI();
+        pushURL();
+        filter();
+      });
+    }
+
+    readURL();
+    applyToUI();
+    filter();
+  })();
+  </script>
+)}
+
+<style>
+  #catalog-filters {
+    margin-bottom: 2rem;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .pill {
+    background: white;
+    border: 1.5px solid #ccc;
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: #444;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    white-space: nowrap;
+  }
+
+  .pill:hover {
+    border-color: #7cb342;
+    color: #2d6a2d;
+  }
+
+  .pill-active {
+    background: #2d6a2d;
+    border-color: #2d6a2d;
+    color: white;
+  }
+
+  .pill-active:hover {
+    background: #1a4620;
+    border-color: #1a4620;
+    color: white;
+  }
+
+  .filter-controls {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-controls select,
+  .filter-controls input[type="search"] {
+    border: 1.5px solid #ccc;
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+    color: #333;
+    background: white;
+    min-height: 2.25rem;
+    outline: none;
+    transition: border-color 0.12s;
+  }
+
+  .filter-controls select:focus,
+  .filter-controls input[type="search"]:focus {
+    border-color: #7cb342;
+  }
+
+  .filter-controls input[type="search"] {
+    flex: 1;
+    min-width: 180px;
+  }
+
+  #no-results {
+    color: #666;
+    font-size: 0.95rem;
+    margin-top: 3rem;
+    text-align: center;
+  }
+
+  .clear-btn {
+    background: none;
+    border: none;
+    color: #2d6a2d;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+    padding: 0;
+  }
+
+  .clear-btn:hover {
+    color: #1a4620;
+  }
+
+  @media (max-width: 640px) {
+    .filter-controls {
+      flex-direction: column;
+    }
+
+    .filter-controls input[type="search"] {
+      min-width: unset;
+      width: 100%;
+    }
+  }
+</style>

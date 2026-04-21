@@ -120,6 +120,11 @@ const navLinks = {
         line-height: 0;
       }
 
+      .brand-logo-link picture {
+        display: block;
+        line-height: 0;
+      }
+
       .site-nav {
         display: flex;
         gap: 1.5rem;
@@ -179,13 +184,25 @@ const navLinks = {
         }
       }
 
-      @media (max-width: 500px) {
+      @media (max-width: 600px) {
+        .header-inner { gap: 0.4rem; }
+
+        .brand-logo { height: 2.2rem; width: 2.2rem; }
+
         .site-nav { gap: 0; }
 
         .site-nav a {
-          font-size: 0.85rem;
+          font-size: 0.75rem;
+          font-weight: 500;
+          text-transform: none;
           letter-spacing: 0;
-          padding: 0.4rem 0.5rem;
+          padding: 0.3rem 0.35rem;
+        }
+
+        .lang-select {
+          font-size: 0.85rem;
+          padding: 0.3rem 0.4rem;
+          min-height: 1.8rem;
         }
       }
 
@@ -351,7 +368,10 @@ const navLinks = {
     <header>
       <div class="header-inner">
         <a href={`/${lang}/`} class="brand-logo-link">
-          <img src="/logo.svg" alt="ERMA Prod-Com" class="brand-logo" />
+          <picture>
+            <source media="(max-width: 600px)" srcset="/logo-icon.svg" />
+            <img src="/logo.svg" alt="ERMA Prod-Com" class="brand-logo" width="160" height="66" />
+          </picture>
         </a>
         <nav class="site-nav">
           {navLinks[lang].map(({ href, label, page }) => (
@@ -361,10 +381,10 @@ const navLinks = {
         <select
           class="lang-select"
           aria-label="Limbă / Nyelv"
-          onchange="var slugMap={'cataloage':'katalogusok','katalogusok':'cataloage'};var p=location.pathname.split('/');p[1]=this.value;if(p[2]&&slugMap[p[2]])p[2]=slugMap[p[2]];location.pathname=p.join('/');"
+          onchange="var slugMap={'cataloage':'katalogusok','katalogusok':'cataloage'};var p=location.pathname.split('/');p[1]=this.value;if(p[2]&&slugMap[p[2]])p[2]=slugMap[p[2]];location.href=p.join('/')+location.search;"
         >
-          <option value="ro" selected={lang === "ro"}>RO 🇷🇴</option>
-          <option value="hu" selected={lang === "hu"}>HU 🇭🇺</option>
+          <option value="ro" selected={lang === "ro"}>RO</option>
+          <option value="hu" selected={lang === "hu"}>HU</option>
         </select>
       </div>
     </header>
