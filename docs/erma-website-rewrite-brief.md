@@ -497,3 +497,122 @@ Planning phase is complete. The brief above is the full context needed to contin
 
 The whole sequence is multi-month in elapsed calendar time but small in actual effort hours. Don't rush it. Each step is independently verifiable and independently reversible until the one after it.
 
+---
+
+## Execution log
+### Session 2026-04-21
+
+**Homepage V2 — DONE.** `/ro/` and `/hu/` replaced with a proper 
+landing page. `/ro/cataloage` and `/hu/katalogusok` added as 
+dedicated catalog routes so sales agents can bookmark the grid 
+directly. CatalogGrid extracted into a shared component.
+
+Homepage sections: full-bleed hero (greenhouse photo, bilingual 
+tagline), CTA row, partner logo strip (9 suppliers, greyscale → 
+full color on hover), teaser cards for Cataloage and Sere.
+
+**Hero image pipeline:** hero moved to `src/img/` and processed 
+via `astro:assets` — 5.6 MB JPEG → 89 KB AVIF at 800w. Full 
+`<picture>` with AVIF + WebP + JPEG fallback, `fetchpriority=high`.
+
+**Partner logos:** 9 logo files in `public/partners/` (SVG where 
+available, PNG/JPG for Dobay/JoluPlant/Vester). Plain `<img>` 
+tags with `/partners/${logo}` paths — no astro:assets pipeline, 
+intentional (logos are small, lazy-loaded below fold, not worth 
+complexity). Data in `src/data/partners.json` with `name`, 
+`displayName`, `logo`, `url` fields.
+
+**Catalog filter — DONE.** `/ro/cataloage` and `/hu/katalogusok` 
+have category pill bar, supplier dropdown, search box. Filter 
+state synced to URL query params (`?cat=&supplier=&q=`) — 
+bookmarkable and shareable. Progressive enhancement: full grid 
+renders server-side, filter UI hidden without JS. Keyboard: 
+`/` focuses search, `Esc` clears.
+
+**CSV parser rewritten with PapaParse — DONE.** Replaced fragile 
+positional indexing (cols[5], cols[6]) with header-based field 
+access (`row.active`, `row.supplier`, etc.). Sheet columns can 
+now be reordered without breaking the site. Discovered the hard 
+way: supplier column added to Sheet shifted active from index 5 
+to index 1, silently emptying the catalog grid.
+
+**Google Sheet updated:** `supplier` column added. Current schema: 
+`id, active, supplier, name, url, image, type, created_at`. 
+10 active rows. 7 unique suppliers.
+
+**Analytics:** Matomo Cloud trial expired April 2024 — data gone, 
+not recoverable. Replaced with **Cloudflare Web Analytics** 
+(free, cookieless, GDPR-compliant, no snippet needed — automatic 
+injection via Cloudflare). Configured in Cloudflare dashboard 
+under Analytics & Logs → Web Analytics → erma.ro. Will show 
+traffic once DNS cutover completes.
+
+**Mobile header fixed:**
+- iOS SVG broken: added `xmlns="http://www.w3.org/2000/svg"` to 
+  `public/logo.svg` — Safari requires xmlns when serving SVG as 
+  image/svg+xml
+- Nav wrapping: `public/logo-icon.svg` (flower only) swapped in 
+  via `<picture>` at ≤600px; nav drops uppercase and font-weight 
+  at mobile to fit 4 HU nav items on one line at 390px
+
+**Gotchas discovered:**
+- SVGs without intrinsic `width`/`height` attributes collapse to 
+  0×0 inside `align-items: center` flex containers. Fix: remove 
+  `align-items` and let default `stretch` fill the container.
+- Elements rendered in `.map()` callbacks don't receive the 
+  component's `data-astro-cid` — scoped CSS rules compiled to 
+  `.class[data-astro-cid-xxx]` never match. Use `:global()`.
+- CSV positional indexing is a silent bomb. Always use 
+  header-based parsing (PapaParse).
+- `public/` assets bypass `astro:assets` entirely — files there 
+  are served verbatim. Use `src/img/` for anything that should 
+  be processed (hero photos). Use `public/` for assets that 
+  should be served as-is (logos, favicon, partner images).
+- `.claude/launch.json` added for preview server auto-verify.
+
+### Updated: Still to do
+
+1. **Point `erma.ro` A/CNAME records at Cloudflare Pages** 
+   (replace Hosterion IP 185.250.104.21). This is the cutover.
+2. **Watch Cloudflare Web Analytics** for 2 weeks post-cutover 
+   (Matomo is gone — see above).
+3. **Decommission Hosterion hosting plan** (not registrar) after 
+   stability window.
+4. **Archive `/ermavirag/` and `/ermafolia/`** with noindex (§7d).
+5. **Build `sere.erma.ro`** — extract 114 greenhouse markers from 
+   Folium HTML (snippet §13), build Leaflet map, gallery.
+6. **At 2026-10-18 domain expiration:** transfer-or-renew decision.
+7. **Maybe-eventually:** copy-PDF-link button per card, 
+   build-time thumbnail caching, real hero photo from ARW archive.
+
+### Session 2026-04-20
+
+**DNS migration (§11) — DONE.** Nameservers switched from Hosterion to Cloudflare (`keaton.ns.cloudflare.com` / `paislee.ns.cloudflare.com`). SPF cleaned (MiniCRM include removed). DMARC added in monitor mode (`p=none; rua=mailto:dmarc-reports@erma.ro`). Email verified working both directions. Apple and Mailchimp TXT tokens left alone. DNSSEC skipped (registrar friction). Pre-flight snapshot saved.
+
+**Catalog site V1 — DONE.** Astro project at `catalog-site/`. Google Sheets CSV confirmed as CMS (chose over Sanity/Decap for simplicity at 12-row scale). Deployed to Cloudflare Pages at `https://erma-website.pages.dev/`. GitHub repo `v4k0nd/erma-website` (private). Builds on push to `main`. Deploy Hook configured for manual rebuilds when Sheet updates.
+
+Design state at end of session:
+- Sticky white header with 8px green top border, 6px bottom, ERMA hibiscus logo
+- Card grid with 3D tilt on hover (desktop only), title overlaid on image with dark gradient (no white strip)
+- Matomo Cloud tracking preserved, site ID '1' (traffic continuity with old site)
+- About pages with full content for both languages (`src/content/about-{ro,hu}.txt`) — 7 partners including Straathof and Müller
+- Contact pages with JS-obfuscated phone numbers (clickable `tel:` links) and Google Maps iframe embed
+
+**Still pending before going live:**
+- `erma.ro` A record still points to Hosterion (185.250.104.21). CNAME cutover to Cloudflare Pages is the one remaining step to "go live."
+
+**Gotchas discovered (worth preserving for future sessions):**
+- Astro's `<style>` blocks scope all selectors to the component. Slotted content doesn't carry the scope attribute. Use `:global()` wrappers for rules targeting children rendered via `<slot />` — otherwise the CSS silently fails to match.
+- `display: flex; align-items: center` + `max-width/max-height: 100%` on a child `<img>` produces sizing bugs. Use `object-fit: contain` without flex alignment instead.
+- Astro SVG imports can break (raw XML rendering in browser). Use `public/logo.svg` with plain `<img src="/logo.svg" />` instead of import + `.src`.
+- TypeScript 6.x breaks `@astrojs/check@0.9.8` peer dep. Pin to `^5.4.0` in `package.json`.
+- Cloudflare Pages needs `Root directory: catalog-site` in build settings because the repo is a monorepo (sere-site/ will live alongside later).
+
+### Still to do
+
+1. Point `erma.ro` A/CNAME records at Cloudflare Pages (replace Hosterion IP).
+2. Watch Matomo 2 weeks for traffic anomalies or 404 spikes.
+3. Decommission Hosterion hosting plan (not registrar).
+4. Archive `/ermavirag/` and `/ermafolia/` with noindex (§7d).
+5. Build `sere.erma.ro` — extract 114 greenhouse markers from Folium HTML (snippet §13), build Leaflet map, gallery, enrichment.
+6. At 2026-10-18 domain expiration: transfer-or-renew decision.
