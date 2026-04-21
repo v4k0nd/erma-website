@@ -1,0 +1,56 @@
+[
+  {
+    "name": "schneider",
+    "displayName": "Schneider",
+    "logo": "schneider.svg",
+    "url": "https://www.schneiderbv.nl/"
+  },
+  {
+    "name": "dobay",
+    "displayName": "Dobay Kertészet",
+    "logo": "dobay.png",
+    "url": "https://dobaykert.hu/"
+  },
+  {
+    "name": "joluplant",
+    "displayName": "JoluPlant",
+    "logo": "joluplant.png",
+    "url": "https://www.joluplant.be/eng/"
+  },
+  {
+    "name": "kebol",
+    "displayName": "Kebol",
+    "logo": "kebol.svg",
+    "url": "https://www.kebol.net/"
+  },
+  {
+    "name": "muller",
+    "displayName": "Müller",
+    "logo": "muller.svg",
+    "url": "https://mullerseeds.com/"
+  },
+  {
+    "name": "pac",
+    "displayName": "Elsner PAC",
+    "logo": "pac.svg",
+    "url": "https://www.pac-elsner.com/en/"
+  },
+  {
+    "name": "straathof",
+    "displayName": "Straathof",
+    "logo": "straathof.svg",
+    "url": "https://straathofplants.nl/"
+  },
+  {
+    "name": "syngenta",
+    "displayName": "Syngenta",
+    "logo": "syngenta.svg",
+    "url": "https://www.syngenta.com/"
+  },
+  {
+    "name": "vester",
+    "displayName": "Vester",
+    "logo": "vester.png",
+    "url": "https://cjmvester.nl/"
+  }
+]

@@ -1,0 +1,28 @@
+---
+import { fetchActiveCatalogs, groupByType, TYPE_LABELS } from "../lib/catalogs";
+
+interface Props {
+  lang: "ro" | "hu";
+}
+
+const { lang } = Astro.props;
+const catalogs = await fetchActiveCatalogs();
+const groups = groupByType(catalogs);
+---
+{groups.map(([type, items]) => (
+  <section class="type-section">
+    <h2>{TYPE_LABELS[type]?.[lang] ?? type}</h2>
+    <ul class="grid">
+      {items.map((c) => (
+        <li class="card">
+          <a href={c.url} target="_blank" rel="noopener noreferrer">
+            <div class="image-container">
+              <img src={c.image} alt={c.name} loading="lazy" />
+              <p class="card-title">{c.name}</p>
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+))}

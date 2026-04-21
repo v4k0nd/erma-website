@@ -1,0 +1,12 @@
+Kontakt
+
+TELEFONSZÁM: [JavaScript will load here]
+
+
+Address: ERMA Prod-Com, MIERCUREA NIRAJULUI
+Str. SÂNTANA Nr. 1
+Jud. MURES
+547410
+ROMÂNIA
+
+[Map will be embedded below in the HTML]

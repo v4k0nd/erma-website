@@ -1,0 +1,440 @@
+---
+import { fetchActiveCatalogs } from "../lib/catalogs";
+import { Picture } from 'astro:assets';
+import heroImage from '../img/hero-placeholder.jpg';
+import partnersData from '../data/partners.json';
+
+interface Props {
+  lang: "ro" | "hu";
+}
+
+const { lang } = Astro.props;
+
+const catalogs = await fetchActiveCatalogs();
+const previewCatalogs = catalogs.slice(0, 4);
+
+const t = {
+  ro: {
+    heroPrimary:   "Din Mureș, pentru toată România",
+    heroSecondary: "Maros megyéből egész Romániának",
+    ctaCatalogs:   "Vezi cataloagele →",
+    ctaAbout:      "Despre noi →",
+    catalogsHref:  "/ro/cataloage",
+    aboutHref:     "/ro/about",
+    partnersTitle: "Partenerii noștri",
+    teaserCatTitle: "Cataloagele 2026",
+    teaserCatDesc:  "Butași, răsaduri, semințe și bulbi — tot ce aveți nevoie pentru sezon.",
+    teaserCatLink:  "/ro/cataloage",
+    teaserSereTitle: "Construim solarii",
+    teaserSereDesc:  "114 instalații în toată România. Vedeți proiectele noastre de sere.",
+  },
+  hu: {
+    heroPrimary:   "Maros megyéből egész Romániának",
+    heroSecondary: "Din Mureș, pentru toată România",
+    ctaCatalogs:   "Katalógusok megtekintése →",
+    ctaAbout:      "Rólunk →",
+    catalogsHref:  "/hu/katalogusok",
+    aboutHref:     "/hu/about",
+    partnersTitle: "Partnereink",
+    teaserCatTitle: "2026-os katalógusok",
+    teaserCatDesc:  "Dugványok, palánták, magvak és hagymák — mindent egy helyen a szezonra.",
+    teaserCatLink:  "/hu/katalogusok",
+    teaserSereTitle: "Üvegházakat építünk",
+    teaserSereDesc:  "114 telepítés Romániában. Tekintse meg üvegházi projektjeinket.",
+  },
+}[lang];
+
+---
+
+<main class="homepage">
+
+  <!-- 1. Hero -->
+  <section class="hero">
+    <Picture
+      src={heroImage}
+      alt="Sere ERMA — flori și butași din Mureș"
+      widths={[800, 1600, 2400]}
+      sizes="100vw"
+      formats={['avif', 'webp']}
+      loading="eager"
+      fetchpriority="high"
+      class="hero-img"
+      pictureAttributes={{ class: "hero-picture" }}
+    />
+    <div class="hero-overlay">
+      <div class="hero-text">
+        <p class="hero-primary">{t.heroPrimary}</p>
+        <p class="hero-secondary">{t.heroSecondary}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Primary CTAs -->
+  <section class="cta-band">
+    <a href={t.catalogsHref} class="cta-card">
+      <span class="cta-label">{t.ctaCatalogs}</span>
+    </a>
+    <a href={t.aboutHref} class="cta-card">
+      <span class="cta-label">{t.ctaAbout}</span>
+    </a>
+  </section>
+
+  <!-- 3. Partners strip -->
+  <section class="partners-section">
+    <h2 class="partners-title">{t.partnersTitle}</h2>
+    <div class="partners-grid">
+      {partnersData.map((p) => {
+        const displayName = p.displayName ?? (p.name[0].toUpperCase() + p.name.slice(1));
+        return (
+          <a
+            href={p.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="partner-link"
+            title={displayName}
+          >
+            <img
+              src={`/partners/${p.logo}`}
+              alt={displayName}
+              loading="lazy"
+              class="partner-logo"
+            />
+          </a>
+        );
+      })}
+    </div>
+  </section>
+
+  <!-- 4. Teaser cards -->
+  <section class="teasers-section">
+    <a href={t.teaserCatLink} class="teaser-card">
+      <div class="teaser-body">
+        <h3 class="teaser-title">{t.teaserCatTitle}</h3>
+        <p class="teaser-desc">{t.teaserCatDesc}</p>
+      </div>
+      {previewCatalogs.length > 0 && (
+        <div class="teaser-mini-grid">
+          {previewCatalogs.map((c) => (
+            <div class="mini-cover">
+              <img src={c.image} alt={c.name} loading="lazy" />
+            </div>
+          ))}
+        </div>
+      )}
+    </a>
+
+    <a href="https://sere.erma.ro" target="_blank" rel="noopener noreferrer" class="teaser-card teaser-sere">
+      <div class="teaser-body">
+        <h3 class="teaser-title">{t.teaserSereTitle}</h3>
+        <p class="teaser-desc">{t.teaserSereDesc}</p>
+      </div>
+      <div class="sere-graphic" aria-hidden="true">
+        <div class="sere-icon">🏗</div>
+      </div>
+    </a>
+  </section>
+
+</main>
+
+<style>
+  .homepage {
+    width: 100%;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    position: relative;
+    width: 100%;
+    height: clamp(340px, 65vh, 680px);
+    background: #2d5a1b;
+    overflow: hidden;
+  }
+
+  .hero-picture {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.72) 0%,
+      rgba(0, 0, 0, 0.2) 50%,
+      transparent 100%
+    );
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .hero-text {
+    padding: 2.5rem 3rem;
+  }
+
+  .hero-primary {
+    color: white;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  .hero-secondary {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: clamp(0.95rem, 2vw, 1.2rem);
+    font-weight: 400;
+    margin: 0;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+
+  /* ── CTAs ── */
+  .cta-band {
+    display: flex;
+    gap: 0;
+    background: #2d6a2d;
+  }
+
+  .cta-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 2rem;
+    text-decoration: none;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: background 0.15s ease;
+    border-right: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .cta-card:last-child {
+    border-right: none;
+  }
+
+  .cta-card:hover {
+    background: #1a4620;
+    color: white;
+  }
+
+  /* ── Partners ── */
+  .partners-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 0 3rem;
+  }
+
+  .partners-title {
+    color: #2d6a2d;
+    font-size: 1.5rem;
+    font-weight: 600;
+    padding-left: 2rem;
+    margin: 0 0 1.5rem;
+  }
+
+  .partners-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 2.5rem 3rem;
+    padding: 1.5rem 2rem 0;
+  }
+
+  .partner-link {
+    display: inline-flex;
+    justify-content: center;
+    height: 48px;
+    max-width: 180px;
+    text-decoration: none;
+  }
+
+  /* :global() required — <img> elements inside .map() don't receive
+     the component's data-astro-cid, same issue as .card img */
+  :global(.partner-logo) {
+    max-height: 48px;
+    max-width: 180px;
+    width: auto;
+    height: auto;
+    filter: grayscale(1) opacity(0.55);
+    transition: filter 0.25s ease, transform 0.25s ease;
+  }
+
+  .partner-link:hover :global(.partner-logo),
+  .partner-link:focus-visible :global(.partner-logo) {
+    filter: grayscale(0) opacity(1);
+    transform: scale(1.05);
+  }
+
+  /* ── Teasers ── */
+  .teasers-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .teaser-card {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+
+  .teaser-card:hover {
+    box-shadow: 0 6px 20px rgba(45, 106, 45, 0.2);
+    transform: translateY(-2px);
+    color: inherit;
+  }
+
+  .teaser-body {
+    padding: 1.5rem;
+  }
+
+  .teaser-title {
+    color: #2d6a2d;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+    padding: 0;
+  }
+
+  .teaser-desc {
+    color: #555;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+  }
+
+  .teaser-mini-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    flex: 1;
+  }
+
+  .mini-cover {
+    aspect-ratio: 3 / 4;
+    background: #e8e8e8;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mini-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  .teaser-sere {
+    background: #f8faf5;
+  }
+
+  .sere-graphic {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    min-height: 120px;
+  }
+
+  .sere-icon {
+    font-size: 4rem;
+    opacity: 0.6;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    .hero-text {
+      padding: 1.5rem;
+    }
+
+    .cta-band {
+      flex-direction: column;
+    }
+
+    .cta-card {
+      border-right: none;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .cta-card:last-child {
+      border-bottom: none;
+    }
+
+    .partners-section {
+      padding: 2rem 1rem;
+    }
+
+    .teasers-section {
+      grid-template-columns: 1fr;
+      padding: 0 1rem 3rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .partners-grid {
+      gap: 2rem 2.5rem;
+      justify-content: center;
+      padding: 1rem 1rem 0;
+    }
+
+    .partner-link {
+      height: 36px;
+      max-width: 120px;
+    }
+
+    :global(.partner-logo) {
+      max-height: 36px;
+      max-width: 120px;
+    }
+
+    .hero-text {
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+    }
+
+    .hero-primary {
+      font-size: 1.75rem;
+      line-height: 1.2;
+    }
+
+    .hero-secondary {
+      font-size: 1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .partners-title {
+      padding-left: 1rem;
+    }
+  }
+</style>

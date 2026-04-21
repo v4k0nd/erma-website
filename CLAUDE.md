@@ -11,7 +11,7 @@ Full planning brief in `docs/erma-website-rewrite-brief.md` — read this first 
   - Data source: Google Sheet published as CSV
     - URL: https://docs.google.com/spreadsheets/d/e/2PACX-1vRcSnKN65amdCXAHfu6lM9uph3BAEKIGJu6sFcCG0z4Nr-7NkvVL0wHSZLX0KYWTFamdGtVHHThIdAj/pub?gid=0&single=true&output=csv
   - Languages: Romanian (default) + Hungarian, routes `/ro/` and `/hu/`
-  - Analytics: Matomo Cloud, site ID '1' (preserved from old site for continuity)
+  - Analytics: Cloudflare Web Analytics (free, cookieless). Matomo Cloud trial expired April 2024; data not recoverable.
   - Staging URL: https://erma-website.pages.dev/
   - GitHub repo: v4k0nd/erma-website (private)
 
